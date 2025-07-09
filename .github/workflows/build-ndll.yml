@@ -19,7 +19,7 @@ jobs:
         fetch-depth: 0
         
     - name: Setup Haxe
-      uses: actions/setup-haxe@v1
+      uses: haxe/setup-haxe@v1.2.0
       with:
         haxe-version: '4.3.1'
         
@@ -75,7 +75,7 @@ jobs:
         find extension-orientation/ndll -name '*.a'
         
     - name: Upload NDLL artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: ndll-binaries
         path: extension-orientation/ndll
@@ -91,4 +91,4 @@ jobs:
         name: NDLL Build ${{ github.sha }}
         body: |
           Automatically compiled NDLL files for iOS
-          - Build date: ${{ steps.get-date.outputs.date }}
+          - Build date: $(date -u +"%Y-%m-%dT%H:%M:%SZ")
