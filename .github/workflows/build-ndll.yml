@@ -38,8 +38,8 @@ jobs:
     - name: Configure environment
       run: |
         # 创建必要的符号链接
-        mkdir -p extension-orientation/include
-        cd extension-orientation/include
+        mkdir -p include
+        cd include
         ln -s /usr/local/include/SDL2 SDL2 || true
         
         # 设置环境变量
@@ -48,27 +48,27 @@ jobs:
         
     - name: Build modern NDLL (device)
       run: |
-        cd extension-orientation/project
+        cd project
         haxelib run hxcpp Build.xml -Dios -DHXCPP_ARM64 -DHXCPP_CPP11
         
     - name: Build modern NDLL (simulator)
       run: |
-        cd extension-orientation/project
+        cd project
         haxelib run hxcpp Build.xml -Dios -DHXCPP_X86 -Dsimulator
         
     - name: Build legacy NDLL (device)
       run: |
-        cd extension-orientation/project
+        cd project
         haxelib run hxcpp Build.xml -Dios -DHXCPP_ARM64 -DHXCPP_CPP11 -Dlegacy
         
     - name: Build legacy NDLL (simulator)
       run: |
-        cd extension-orientation/project
+        cd project
         haxelib run hxcpp Build.xml -Dios -DHXCPP_X86 -Dsimulator -Dlegacy
         
     - name: Verify artifacts
       run: |
-        ls -la extension-orientation/ndll/iPhone/
+        ls -la ndll/iPhone/
         echo "Artifacts:"
         find extension-orientation/ndll -name '*.a'
         
@@ -76,7 +76,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: ndll-binaries
-        path: extension-orientation/ndll
+        path: ndll
         retention-days: 5
         
     - name: Create release with NDLLs
@@ -84,7 +84,7 @@ jobs:
       uses: softprops/action-gh-release@v1
       with:
         files: |
-          extension-orientation/ndll/**/*.a
+          ndll/**/*.a
         tag_name: ${{ github.ref }}
         name: NDLL Build ${{ github.sha }}
         body: |
