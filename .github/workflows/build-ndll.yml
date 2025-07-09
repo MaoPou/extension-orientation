@@ -1,0 +1,94 @@
+name: Build iOS NDLL for extension-orientation
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build-ndll:
+    runs-on: macos-latest
+    timeout-minutes: 30
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        
+    - name: Setup Haxe
+      uses: actions/setup-haxe@v1
+      with:
+        haxe-version: '4.3.1'
+        
+    - name: Install dependencies
+      run: |
+        # 安装基础工具
+        brew install pkg-config
+        
+        # 安装 Haxe 库
+        haxelib install hxcpp
+        haxelib install lime
+        haxelib run lime setup
+        
+        # 安装 iOS 编译工具
+        sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
+        sudo xcodebuild -license accept
+        
+    - name: Configure environment
+      run: |
+        # 创建必要的符号链接
+        mkdir -p extension-orientation/include
+        cd extension-orientation/include
+        ln -s /usr/local/include/SDL2 SDL2 || true
+        
+        # 设置环境变量
+        echo "HXCPP=/Users/runner/haxe/lib/hxcpp/git/bin" >> $GITHUB_ENV
+        echo "SDKROOT=$(xcrun --sdk iphoneos --show-sdk-path)" >> $GITHUB_ENV
+        
+    - name: Build modern NDLL (device)
+      run: |
+        cd extension-orientation/project
+        haxelib run hxcpp Build.xml -Dios -DHXCPP_ARM64 -DHXCPP_CPP11
+        
+    - name: Build modern NDLL (simulator)
+      run: |
+        cd extension-orientation/project
+        haxelib run hxcpp Build.xml -Dios -DHXCPP_X86 -Dsimulator
+        
+    - name: Build legacy NDLL (device)
+      run: |
+        cd extension-orientation/project
+        haxelib run hxcpp Build.xml -Dios -DHXCPP_ARM64 -DHXCPP_CPP11 -Dlegacy
+        
+    - name: Build legacy NDLL (simulator)
+      run: |
+        cd extension-orientation/project
+        haxelib run hxcpp Build.xml -Dios -DHXCPP_X86 -Dsimulator -Dlegacy
+        
+    - name: Verify artifacts
+      run: |
+        ls -la extension-orientation/ndll/iPhone/
+        echo "Artifacts:"
+        find extension-orientation/ndll -name '*.a'
+        
+    - name: Upload NDLL artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: ndll-binaries
+        path: extension-orientation/ndll
+        retention-days: 5
+        
+    - name: Create release with NDLLs
+      if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+      uses: softprops/action-gh-release@v1
+      with:
+        files: |
+          extension-orientation/ndll/**/*.a
+        tag_name: ${{ github.ref }}
+        name: NDLL Build ${{ github.sha }}
+        body: |
+          Automatically compiled NDLL files for iOS
+          - Build date: ${{ steps.get-date.outputs.date }}
