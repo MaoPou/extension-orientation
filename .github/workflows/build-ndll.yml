@@ -13,15 +13,13 @@ jobs:
     timeout-minutes: 30
     
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
+    - name: Checkout
+      uses: actions/checkout@main
         
     - name: Setup Haxe
-      uses: haxe/setup-haxe@v1.2.0
+      uses: krdlab/setup-haxe@master
       with:
-        haxe-version: '4.3.1'
+        haxe-version: 4.3.6
         
     - name: Install dependencies
       run: |
